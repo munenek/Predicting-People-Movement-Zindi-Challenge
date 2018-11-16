@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import RandomizedSearchCV
 
 from sklearn.metrics import mean_absolute_error
 
@@ -16,7 +17,26 @@ from sklearn.svm import SVR
 
 
 def randomForest(xTrain, xTest, yTrain, yTest):
-	rfr = RandomForestRegressor(n_estimators=100, criterion='mae', n_jobs=2, max_depth=7)
+	#rfr = RandomForestRegressor(n_estimators=100, criterion='mae', n_jobs=2, max_depth=7)
+
+	# Number of trees in random forest
+	n_estimators = [int(x) for x in np.linspace(start = 200, stop = 2000, num = 10)]
+	max_features = ['auto', 'sqrt']
+	max_depth = [int(x) for x in np.linspace(10, 110, num = 11)]
+	max_depth.append(None)
+	min_samples_split = [2, 5, 10]
+	min_samples_leaf = [1, 2, 4]
+	bootstrap = [True, False]
+	criterion = ['mae']
+	random_grid = {'n_estimators': n_estimators,
+	               'max_features': max_features,
+	               'max_depth': max_depth,
+	               'min_samples_split': min_samples_split,
+	               'min_samples_leaf': min_samples_leaf,
+	               'bootstrap': bootstrap,
+	               'criterion': criterion}
+	forest = RandomForestRegressor()
+	rfr = RandomizedSearchCV(forest, param_distributions = random_grid, n_iter=100, cv=4, n_jobs=10)
 
 	rfr.fit(xTrain, yTrain)
 	yPred = rfr.predict(xTest)
@@ -86,6 +106,8 @@ def main():
 		out = algol(XTrain, XTest, yTrain, yTest)
 		results.append(out)
 
+	print(results)
+
 	# Get lowest MAE algol and use it
 	i = 0
 	mn = 100
@@ -97,8 +119,6 @@ def main():
 			pt = i
 		i = i+1
 
-	
-
 	# Predict
 	x = testRaw.drop(['ride_id'], axis=1)
 
@@ -108,7 +128,7 @@ def main():
 	preds = {'ride_id': testRaw['ride_id'], 'number_of_ticket': y}
 	predDf = pd.DataFrame.from_dict(preds)
 	
-	predDf.to_csv('data/mobiticket/test_questions_predictions.csv', index=False)
+	#predDf.to_csv('data/mobiticket/test_questions_predictions.csv', index=False)
 
 
 
